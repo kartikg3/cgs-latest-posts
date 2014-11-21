@@ -53,10 +53,11 @@ class kh_cgsociety_latest_posts extends WP_Widget {
 			echo $before_title . $title . $after_title;
 			$url_base = "http://forums.cgsociety.org/";
 			$target_url = "http://forums.cgsociety.org/search.php?do=finduser&u=" . $userid;
+			echo $target_url;
 			$html = file_get_html($target_url);
-
 			foreach($html->find('td.alt1') as $element)	{
-				$link_array[] = $element->children(1)->find('a')[0];       			
+				$link_array[] = $element->children(1)->find('a')[0];
+				//$link_array[] = $element->children(1)->next_sibling();
    			}
    			?>
    			<ul>
