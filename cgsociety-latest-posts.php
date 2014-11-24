@@ -6,21 +6,26 @@ Description: Widget to list your latest CGSociety posts.
 Version: 1.0.0
 Author: Kartik Hariharan
 Author URI: http://kartikhariharan.com
-License: none
 */
-//ini_set('display_errors', 'On');
-include_once('simple_html_dom.php');
+
+ini_set('display_errors', 'On');
 
 foreach ( glob( plugin_dir_path( __FILE__ ) . "includes/*.php" ) as $file ) {
     include_once $file;
 }
-class kh_cgsociety_latest_posts extends WP_Widget {
+
+
+class KhCGSocietyLatestPosts extends WP_Widget {
+	
+	protected $url_base;
+
 	function __construct() {
+		$this->url_base = "http://forums.cgsociety.org/";
 		$params = array(
 				'name' => __('CGSociety Latest Posts'),
 				'description' => __('Widget to list your latest CGSociety posts.')
 			);
-		parent::__construct('kh_cgsociety_latest_posts', '', $params);
+		parent::__construct('KhCGSocietyLatestPosts', '', $params);
 	}
 
 	public function form($instance) {
@@ -50,31 +55,52 @@ class kh_cgsociety_latest_posts extends WP_Widget {
 		extract($args);
 		extract($instance);
 		echo $before_widget;
-			echo $before_title . $title . $after_title;
-			$url_base = "http://forums.cgsociety.org/";
-			$target_url = "http://forums.cgsociety.org/search.php?do=finduser&u=" . $userid;
-			echo $target_url;
-			$html = file_get_html($target_url);
-			foreach($html->find('td.alt1') as $element)	{
-				$link_array[] = $element->children(1)->find('a')[0];
-				//$link_array[] = $element->children(1)->next_sibling();
-   			}
-   			?>
-   			<ul>
-   			<?php
-   			foreach(array_unique($link_array) as $post_link) {
-   				echo "<li>" . $post_link . "</li>";
-   			}
-   			?>
-   			</ul>
-   			<?php
+			
+			echo $before_title . $title . $after_title;					
+			echo '<img src="' . $this->get_profile_pic_src($userid) . '">';
+			$link_array = $this->get_latest_posts($userid);	
+			?><ul style="list-style-type: none;"><?php
+
+			foreach($link_array as $post_link) {
+				extract($post_link);				
+				echo '<li><a href="' . $link . '"">' . $link_text .'</a></li>';
+			}
+
+			?></ul><?php			
 
 		echo $after_widget;
 	}
+
+	function get_latest_posts($userid) {		
+		$target_url = "compress.zlib://" . $this->url_base . "search.php?do=finduser&u=" . $userid;
+		$html = file_get_html($target_url);
+
+		foreach($html->find('td[class=alt1] div') as $element)	{
+			$this_element = $element->children(1);
+			$element_array[] = $this_element;
+		}
+		
+		foreach(array_unique($element_array) as $post_link) {
+			if(empty($post_link))
+				continue;
+			$link = $this->url_base . $post_link->href;
+			$link_text = $post_link->nodes[0]->innertext;
+			$link_array[] = array('link' => $link, 'link_text' => $link_text);			
+		}
+
+		return $link_array;
+	}
+
+	function get_profile_pic_src($userid) {
+		$img_src = $this->url_base . "image.php?u=" . $userid;
+		return $img_src;
+	}
+
 }
 
+
 add_action('widgets_init', function() {
-	register_widget('kh_cgsociety_latest_posts');
+	register_widget('KhCGSocietyLatestPosts');
 })
 
 ?>
