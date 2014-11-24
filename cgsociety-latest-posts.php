@@ -73,8 +73,8 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 		extract($instance);
 		echo $before_widget;
 			
-			echo $before_title . $title . $after_title;					
-			echo '<img src="' . $this->get_profile_pic_src($userid) . '">';
+			echo $before_title . $title . $after_title;
+			echo '<img class="img-thumbnail" height="64" width="64" src="' . $this->get_profile_pic_src($userid) . '">';
 			$link_array = $this->get_latest_posts($userid);	
 			?><ul style="list-style-type: none;"><?php
 
@@ -118,6 +118,20 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 
 add_action('widgets_init', function() {
 	register_widget('KhCGSocietyLatestPosts');
-})
+});
+
+// Add the Scripts
+add_action('wp_enqueue_scripts', 'add_cgs_scripts');
+function add_cgs_scripts() {
+	wp_enqueue_script('cgs-jq-js', plugins_url('js/jquery-1.9.1.min.js', __FILE__));
+    wp_enqueue_script('cgs-bs-js', plugins_url('js/bootstrap.min.js', __FILE__));
+}
+
+// Add the Stylesheet
+add_action('wp_enqueue_scripts', 'add_cgs_style');
+function add_cgs_style() {
+    wp_register_style('cgs-style', plugins_url('css/bootstrap.min.css', __FILE__));
+    wp_enqueue_style('cgs-style');
+}
 
 ?>
