@@ -74,16 +74,50 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 		echo $before_widget;
 			
 			echo $before_title . $title . $after_title;
-			echo '<img class="img-thumbnail" height="64" width="64" src="' . $this->get_profile_pic_src($userid) . '">';
-			$link_array = $this->get_latest_posts($userid);	
-			?><ul style="list-style-type: none;"><?php
+			?>
+			
+			<div class="media">
 
-			foreach($link_array as $post_link) {
-				extract($post_link);				
-				echo '<li><a href="' . $link . '"">' . $link_text .'</a></li>';
-			}
+				<div class="media-left media-middle">
+					<img class="img-thumbnail img-responsive" height="90" width="90" src="<?php echo $this->get_profile_pic_src($userid); ?>">
+					<div class="small text-center text-muted">Veteran</div>
+				</div>
 
-			?></ul><?php			
+				<div class="media-body">					
+					<div>
+						<h4><strong>kartikg3</strong></h4>
+						<div class="small">Posts: 35</div>
+						<div class="small text-muted">Join Date: Nov 2014</div>
+					</div>
+
+					<a target="_blank" href="<?php echo $this->url_base . "search.php?do=finduser&u=" . $userid; ?>" role="button" class="btn btn-success btn-sm"><img height="16" width="16" class="text-left" src="<?php echo plugins_url('images/cgs_old_logo_sm.png', __FILE__);?>"/> View Posts</a>							
+				</div>						
+
+			</div>
+
+			<div class="container-fluid">
+				<div class="row">
+					<h5 class="text-uppercase">Recent Answers</h5>
+				</div>
+				<div class="row">
+					<?php
+
+					$link_array = $this->get_latest_posts($userid);	
+
+					?>
+					<div class="cgs-posts-list"><?php
+
+					foreach($link_array as $post_link) {
+						extract($post_link);				
+						echo '<p><a href="' . $link . '"">' . $link_text .'</a></p>';
+					}
+
+					?>
+					</div>
+				</div>
+				<div class="row text-left"><a href="#" class="powered-by small text-muted">Powered by cgs-latest-posts</a></div>
+			</div>
+			<?php			
 
 		echo $after_widget;
 	}
@@ -130,7 +164,9 @@ function add_cgs_scripts() {
 // Add the Stylesheet
 add_action('wp_enqueue_scripts', 'add_cgs_style');
 function add_cgs_style() {
-    wp_register_style('cgs-style', plugins_url('css/bootstrap.min.css', __FILE__));
+    wp_register_style('cgs-bs-style', plugins_url('css/bootstrap.min.css', __FILE__));
+    wp_enqueue_style('cgs-bs-style');
+    wp_register_style('cgs-style', plugins_url('css/style.css', __FILE__));
     wp_enqueue_style('cgs-style');
 }
 
