@@ -25,7 +25,7 @@ Author URI: http://kartikhariharan.com
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 	02110-1301, USA
 */
-//ini_set('display_errors', 'On');
+ini_set('display_errors', 'On');
 
 foreach ( glob( plugin_dir_path( __FILE__ ) . "includes/*.php" ) as $file ) {
     include_once $file;
@@ -35,9 +35,16 @@ foreach ( glob( plugin_dir_path( __FILE__ ) . "includes/*.php" ) as $file ) {
 class KhCGSocietyLatestPosts extends WP_Widget {
 	
 	protected $url_base;
+	protected $min_request_interval;
+	protected $show_powered_by;
+	protected $powered_by_url;
+	private static $instance_count = 0;
 
 	function __construct() {
+		$this->powered_by_url = "http://kartikhariharan.com";
 		$this->url_base = "http://forums.cgsociety.org/";
+		$this->min_request_interval = 2;
+		$this->show_powered_by = true;
 		$params = array(
 				'name' => __('CGSociety Latest Posts'),
 				'description' => __('Widget to list your latest CGSociety posts.')
@@ -78,29 +85,43 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 	}
 
 	public function widget($args, $instance) {
+		
+		if ($this->instance_count > 0)
+			sleep($this->min_request_interval * $this->instance_count);
+
+		$this->instance_count ++;
+
 		extract($args);
 		extract($instance);
-		echo $before_widget;
+		echo $before_widget;		
 
 			if (empty($userid))
 				return false;
 			
 			if (!empty($title))
 				echo $before_title . $title . $after_title;
+
+			$link_array = $this->get_latest_posts($userid);			
+
+			if (!empty($link_array)) {
+				extract($link_array[0]);
+				$user_info_array = $this->get_user_info($userid, $link);
+			}
+
 			?>
 			
 			<div class="media">
 
 				<div class="media-left media-middle">
 					<img class="img-thumbnail img-responsive" height="90" width="90" src="<?php echo $this->get_profile_pic_src($userid); ?>">
-					<div class="small text-center text-muted">Veteran</div>
+					<div class="small text-center text-muted"><?php echo $user_info_array['user_status']; ?></div>
 				</div>
 
 				<div class="media-body">					
 					<div>
-						<h4><strong>kartikg3</strong></h4>
-						<div class="small">Posts: 35</div>
-						<div class="small text-muted">Join Date: Nov 2014</div>
+						<h4><strong><?php echo $user_info_array['username']; ?></strong></h4>
+						<div class="small">Posts: <?php echo $user_info_array['user_posts_count']; ?></div>
+						<div class="small text-muted">Join Date: <?php echo $user_info_array['user_join_date']; ?></div>
 					</div>
 
 					<a target="_blank" href="<?php echo $this->url_base . "search.php?do=finduser&u=" . $userid; ?>" role="button" class="btn btn-success btn-sm"><img height="16" width="16" class="text-left" src="<?php echo plugins_url('images/cgs_old_logo_sm.png', __FILE__);?>"/> View Posts</a>							
@@ -113,15 +134,12 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 					<h5 class="text-uppercase">Recent Answers</h5>
 				</div>
 				<div class="row">
-					<?php
-
-					$link_array = $this->get_latest_posts($userid);	
-
-					?>
+					
 					<div class="cgs-posts-list"><?php
 
 					if (empty($maxposts))
 						$maxposts = 10; // Default
+
 					foreach(array_slice($link_array, 0, $maxposts) as $post_link) {
 						extract($post_link);				
 						echo '<p><a href="' . $link . '"">' . $link_text .'</a></p>';
@@ -130,7 +148,11 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 					?>
 					</div>
 				</div>
-				<div class="row text-left"><a href="#" class="powered-by small text-muted">Powered by cgs-latest-posts</a></div>
+				<?php if ($this->show_powered_by) { ?>
+
+					<div class="row text-left"><a href="<?php echo $this->powered_by_url ;?>" class="powered-by small text-muted">Powered by cgs-latest-posts</a></div>
+
+				<?php } ?>
 			</div>
 			<?php			
 
@@ -161,6 +183,38 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 	function get_profile_pic_src($userid) {
 		$img_src = $this->url_base . "image.php?u=" . $userid;
 		return $img_src;
+	}
+
+	function get_user_info($userid, $link) {
+
+		$url_parts = parse_url($link)['query'];
+		parse_str($url_parts, $output);
+		if (empty($output['t'])){
+			$t_component = $output["amp;t"];
+		} else {
+			$t_component = $output['t'];
+		}
+		$target_url = "compress.zlib://" . $this->url_base . "showthread.php?t=" . $t_component;
+		$html = file_get_html($target_url);
+
+		foreach ($html->find('a[class=bigusername]') as $element) {
+			if (strstr($element->href, $userid)) {
+
+				$username = $element->innertext;
+				$user_status = $element->parent()->next_sibling()->innertext;
+				$main_td = $element->parent()->parent();
+				
+				$td_divs = $main_td->find('div');
+				$div_count = count($td_divs);
+				
+				$user_join_date = str_replace("Join Date: ", "", $td_divs[$div_count - 3]->nodes[0]->innertext);
+				$user_posts_count = str_replace(" Posts: ", "", $td_divs[$div_count - 2]->nodes[0]->innertext);
+				$user_info_array = array('username' => $username, 'user_status' => $user_status, 'user_join_date' => $user_join_date, 'user_posts_count' => $user_posts_count);
+				return $user_info_array;
+			}			
+		}
+
+		return;
 	}
 
 }
