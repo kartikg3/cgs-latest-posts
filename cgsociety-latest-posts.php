@@ -38,6 +38,7 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 	protected $min_request_interval;
 	protected $show_powered_by;
 	protected $powered_by_url;
+	protected $cache_expiry_time;
 	private static $instance_count = 0;
 
 	function __construct() {
@@ -45,6 +46,7 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 		$this->url_base = "http://forums.cgsociety.org/";
 		$this->min_request_interval = 2;
 		$this->show_powered_by = true;
+		$this->cache_expiry_time = 50;
 		$params = array(
 				'name' => __('CGSociety Latest Posts'),
 				'description' => __('Widget to list your latest CGSociety posts.')
@@ -85,11 +87,6 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 	}
 
 	public function widget($args, $instance) {
-		
-		if ($this->instance_count > 0)
-			sleep($this->min_request_interval * $this->instance_count);
-
-		$this->instance_count ++;
 
 		extract($args);
 		extract($instance);
@@ -162,20 +159,34 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 
 	function get_latest_posts($userid) {
 
-		$target_url = "compress.zlib://" . $this->url_base . "search.php?do=finduser&u=" . $userid;
-		$html = file_get_html($target_url);
+		$transient_key_base = 'cgs-trans-posts-cache-';
+		$transient_key = $transient_key_base . $userid;
+		$link_array = get_transient($transient_key);
 
-		foreach($html->find('td[class=alt1] div') as $element)	{
-			$this_element = $element->children(1);
-			$element_array[] = $this_element;
-		}
-		
-		foreach(array_unique($element_array) as $post_link) {
-			if(empty($post_link))
-				continue;
-			$link = $this->url_base . $post_link->href;
-			$link_text = $post_link->nodes[0]->innertext;
-			$link_array[] = array('link' => $link, 'link_text' => $link_text);			
+		if (false === $link_array) {
+			
+			if ($this->instance_count > 0)
+				sleep($this->min_request_interval * $this->instance_count);
+
+			$this->instance_count ++;
+
+			$target_url = "compress.zlib://" . $this->url_base . "search.php?do=finduser&u=" . $userid;
+			$html = file_get_html($target_url);
+
+			foreach($html->find('td[class=alt1] div') as $element)	{
+				$this_element = $element->children(1);
+				$element_array[] = $this_element;
+			}
+			
+			foreach(array_unique($element_array) as $post_link) {
+				if(empty($post_link))
+					continue;
+				$link = $this->url_base . $post_link->href;
+				$link_text = $post_link->nodes[0]->innertext;
+				$link_array[] = array('link' => $link, 'link_text' => $link_text);			
+			}
+
+			set_transient($transient_key, $link_array, $this->cache_expiry_time);
 		}
 
 		return $link_array;
@@ -188,35 +199,44 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 
 	function get_user_info($userid, $link) {
 
-		$parsed_url = parse_url($link);
-		$url_parts = $parsed_url['query'];
-		parse_str($url_parts, $output);
-		if (empty($output['t'])){
-			$t_component = $output["amp;t"];
-		} else {
-			$t_component = $output['t'];
-		}
-		$target_url = "compress.zlib://" . $this->url_base . "showthread.php?t=" . $t_component;
-		$html = file_get_html($target_url);
+		$transient_key_base = 'cgs-trans-userinfo-cache-';
+		$transient_key = $transient_key_base . $userid;
+		$user_info_array = get_transient($transient_key);
 
-		foreach ($html->find('a[class=bigusername]') as $element) {
-			if (strstr($element->href, $userid)) {
+		if (false === $user_info_array) {
 
-				$username = $element->innertext;
-				$user_status = $element->parent()->next_sibling()->innertext;
-				$main_td = $element->parent()->parent();
-				
-				$td_divs = $main_td->find('div');
-				$div_count = count($td_divs);
-				
-				$user_join_date = str_replace("Join Date: ", "", $td_divs[$div_count - 3]->nodes[0]->innertext);
-				$user_posts_count = str_replace(" Posts: ", "", $td_divs[$div_count - 2]->nodes[0]->innertext);
-				$user_info_array = array('username' => $username, 'user_status' => $user_status, 'user_join_date' => $user_join_date, 'user_posts_count' => $user_posts_count);
-				return $user_info_array;
-			}			
-		}
+			$parsed_url = parse_url($link);
+			$url_parts = $parsed_url['query'];
+			parse_str($url_parts, $output);
+			if (empty($output['t'])){
+				$t_component = $output["amp;t"];
+			} else {
+				$t_component = $output['t'];
+			}
+			$target_url = "compress.zlib://" . $this->url_base . "showthread.php?t=" . $t_component;
+			$html = file_get_html($target_url);
 
-		return;
+			foreach ($html->find('a[class=bigusername]') as $element) {
+				if (strstr($element->href, $userid)) {
+
+					$username = $element->innertext;
+					$user_status = $element->parent()->next_sibling()->innertext;
+					$main_td = $element->parent()->parent();
+					
+					$td_divs = $main_td->find('div');
+					$div_count = count($td_divs);
+					
+					$user_join_date = str_replace("Join Date: ", "", $td_divs[$div_count - 3]->nodes[0]->innertext);
+					$user_posts_count = str_replace(" Posts: ", "", $td_divs[$div_count - 2]->nodes[0]->innertext);
+					$user_info_array = array('username' => $username, 'user_status' => $user_status, 'user_join_date' => $user_join_date, 'user_posts_count' => $user_posts_count);
+					
+					set_transient($transient_key, $user_info_array, $this->cache_expiry_time);
+					break;
+				}			
+			}
+		}		
+
+		return $user_info_array;
 	}
 
 }
