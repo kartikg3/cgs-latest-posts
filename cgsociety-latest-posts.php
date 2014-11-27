@@ -25,7 +25,7 @@ Author URI: http://kartikhariharan.com
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 	02110-1301, USA
 */
-ini_set('display_errors', 'On');
+//ini_set('display_errors', 'On');
 
 foreach ( glob( plugin_dir_path( __FILE__ ) . "includes/*.php" ) as $file ) {
     include_once $file;
@@ -187,7 +187,8 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 
 	function get_user_info($userid, $link) {
 
-		$url_parts = parse_url($link)['query'];
+		$parsed_url = parse_url($link);
+		$url_parts = $parsed_url['query'];
 		parse_str($url_parts, $output);
 		if (empty($output['t'])){
 			$t_component = $output["amp;t"];
@@ -220,9 +221,11 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 }
 
 
-add_action('widgets_init', function() {
+add_action('widgets_init', 'register_cgs_widget');
+
+function register_cgs_widget() {
 	register_widget('KhCGSocietyLatestPosts');
-});
+}
 
 // Add the Scripts
 add_action('wp_enqueue_scripts', 'add_cgs_scripts');
