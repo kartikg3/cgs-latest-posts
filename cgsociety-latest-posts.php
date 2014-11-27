@@ -25,7 +25,7 @@ Author URI: http://kartikhariharan.com
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 	02110-1301, USA
 */
-ini_set('display_errors', 'On');
+//ini_set('display_errors', 'On');
 
 foreach ( glob( plugin_dir_path( __FILE__ ) . "includes/*.php" ) as $file ) {
     include_once $file;
@@ -65,6 +65,15 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 				value="<?php if(isset($userid)) echo esc_attr($userid); ?>"
 				size="8" />
 		</p>
+
+		<p>
+			<label for="<?php echo $this->get_field_id('maxposts'); ?>">Max posts to show: </label>
+			<input
+				id="<?php echo $this->get_field_id('maxposts'); ?>"
+				name="<?php echo $this->get_field_name('maxposts'); ?>"
+				value="<?php if(isset($maxposts)) echo esc_attr($maxposts); ?>"
+				size="4" />
+		</p>
 		<?php
 	}
 
@@ -72,8 +81,12 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 		extract($args);
 		extract($instance);
 		echo $before_widget;
+
+			if (empty($userid))
+				return false;
 			
-			echo $before_title . $title . $after_title;
+			if (!empty($title))
+				echo $before_title . $title . $after_title;
 			?>
 			
 			<div class="media">
@@ -107,7 +120,9 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 					?>
 					<div class="cgs-posts-list"><?php
 
-					foreach($link_array as $post_link) {
+					if (empty($maxposts))
+						$maxposts = 10; // Default
+					foreach(array_slice($link_array, 0, $maxposts) as $post_link) {
 						extract($post_link);				
 						echo '<p><a href="' . $link . '"">' . $link_text .'</a></p>';
 					}
@@ -122,7 +137,8 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 		echo $after_widget;
 	}
 
-	function get_latest_posts($userid) {		
+	function get_latest_posts($userid) {
+
 		$target_url = "compress.zlib://" . $this->url_base . "search.php?do=finduser&u=" . $userid;
 		$html = file_get_html($target_url);
 
@@ -168,6 +184,38 @@ function add_cgs_style() {
     wp_enqueue_style('cgs-bs-style');
     wp_register_style('cgs-style', plugins_url('css/style.css', __FILE__));
     wp_enqueue_style('cgs-style');
+}
+
+// Installation
+//register_activation_hook(__FILE__, 'cgs_install');
+function cgs_install() {
+	global $wpdb;
+	
+	// Define the table name
+	$table_name = $wpdb->prefix . 'cgs_data';
+
+	// Set table version
+	$cgs_db_version = '1.0';
+
+	// Verify table existence
+	if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+		// Create the table
+		$sql = "CREATE TABLE " . $table_name . "(
+
+				);";
+	} else {
+		// Update table
+		$installed_version = get_option("cgs_db_version");
+		if ($installed_version != $cgs_db_version) {
+			// Update db
+
+			// update version
+			update_option("cgs_db_version", $cgs_db_version);
+		}
+
+	}
+
+	
 }
 
 ?>
