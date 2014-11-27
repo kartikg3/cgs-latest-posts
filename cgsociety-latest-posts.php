@@ -264,36 +264,4 @@ function add_cgs_style() {
     wp_enqueue_style('cgs-style');
 }
 
-// Installation
-//register_activation_hook(__FILE__, 'cgs_install');
-function cgs_install() {
-	global $wpdb;
-	
-	// Define the table name
-	$table_name = $wpdb->prefix . 'cgs_data';
-
-	// Set table version
-	$cgs_db_version = '1.0';
-
-	// Verify table existence
-	if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
-		// Create the table
-		$sql = "CREATE TABLE " . $table_name . "(
-
-				);";
-	} else {
-		// Update table
-		$installed_version = get_option("cgs_db_version");
-		if ($installed_version != $cgs_db_version) {
-			// Update db
-
-			// update version
-			update_option("cgs_db_version", $cgs_db_version);
-		}
-
-	}
-
-	
-}
-
 ?>
