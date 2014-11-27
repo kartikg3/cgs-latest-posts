@@ -5,6 +5,8 @@
 .media h4 {
 	margin-top: 2px;
 	margin-bottom: 2px;
+	color: #777777;
+	font-family: 'Roboto Condensed', sans-serif;
 }
 
 div.media {

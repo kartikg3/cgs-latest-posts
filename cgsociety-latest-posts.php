@@ -57,32 +57,71 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 	public function form($instance) {
 		extract($instance);
 		?>
+		<h4 style="text-decoration: underline;">General Options</h4>
 		<p>
 			<label for="<?php echo $this->get_field_id('title'); ?>">Title: </label>
 			<input
 				class="widefat"
 				id="<?php echo $this->get_field_id('title'); ?>"
 				name="<?php echo $this->get_field_name('title'); ?>"
-				value="<?php if(isset($title)) echo esc_attr($title); ?>" />
+				value="<?php if(isset($title)) echo esc_attr($title); ?>"
+				placeholder="Example: My latest CGSociety Posts" />
 		</p>
 
 		<p>
 			<label for="<?php echo $this->get_field_id('userid'); ?>">User ID: </label>
 			<input
+				class="widefat"
 				id="<?php echo $this->get_field_id('userid'); ?>"
 				name="<?php echo $this->get_field_name('userid'); ?>"
 				value="<?php if(isset($userid)) echo esc_attr($userid); ?>"
-				size="8" />
+				placeholder="Example: 567472" />
+		</p>
+		
+		<h4 style="text-decoration: underline;">Display Options</h4>
+		<p>			
+			<input
+				id="<?php echo $this->get_field_id('show_profile_card_opt'); ?>"
+				name="<?php echo $this->get_field_name('show_profile_card_opt'); ?>"
+				value="<?php if(isset($show_profile_card_opt)) { echo esc_attr($show_profile_card_opt); } else {echo true;}; ?>"
+				<?php if($show_profile_card_opt == true) echo "checked"; ?>
+				type="checkbox"
+				class="checkbox"
+				/>
+			<label for="<?php echo $this->get_field_id('show_profile_card_opt'); ?>">Show profile card</label>
+		</p>
+		<p>			
+			<input
+				id="<?php echo $this->get_field_id('show_profile_pic'); ?>"
+				name="<?php echo $this->get_field_name('show_profile_pic'); ?>"
+				value="<?php if(isset($show_profile_pic)) { echo esc_attr($show_profile_pic); } else {echo true;}; ?>"
+				<?php if($show_profile_pic == true) echo "checked"; ?>
+				type="checkbox"
+				class="checkbox"
+				/>
+			<label for="<?php echo $this->get_field_id('show_profile_pic'); ?>">Show profile picture</label>
 		</p>
 
+		<p>
+			<label for="<?php echo $this->get_field_id('feed_title'); ?>">Feed title: </label>
+			<input
+				class="widefat"
+				id="<?php echo $this->get_field_id('feed_title'); ?>"
+				name="<?php echo $this->get_field_name('feed_title'); ?>"
+				value="<?php if(isset($feed_title)) { echo esc_attr($feed_title); } else { echo 'Recent Answers'; }; ?>"
+				placeholder="Example: My Recent Posts" />
+		</p>
+		
 		<p>
 			<label for="<?php echo $this->get_field_id('maxposts'); ?>">Max posts to show: </label>
 			<input
 				id="<?php echo $this->get_field_id('maxposts'); ?>"
 				name="<?php echo $this->get_field_name('maxposts'); ?>"
-				value="<?php if(isset($maxposts)) echo esc_attr($maxposts); ?>"
-				size="4" />
-		</p>
+				value="<?php if(isset($maxposts)) { echo esc_attr($maxposts); } else {echo 5;}; ?>"
+				size="5" />
+		</p>	
+
+
 		<?php
 	}
 
@@ -100,35 +139,53 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 
 			$link_array = $this->get_latest_posts($userid);			
 
-			if (!empty($link_array)) {
-				extract($link_array[0]);
-				$user_info_array = $this->get_user_info($userid, $link);
+			if ($show_profile_card_opt) {
+				if (!empty($link_array)) {
+					extract($link_array[0]);
+					$user_info_array = $this->get_user_info($userid, $link);
+				}
 			}
 
 			?>
 			<div class="cgs_bs">
-				<div class="media">
+				<?php if ($show_profile_card_opt) {
 
-					<div class="media-left media-middle">
-						<img class="img-thumbnail img-responsive" height="90" width="90" src="<?php echo $this->get_profile_pic_src($userid); ?>">
-						<div class="small text-center text-muted"><?php echo $user_info_array['user_status']; ?></div>
+					?>
+
+					<div class="media">
+
+						<?php
+						if ($show_profile_pic) {
+						?>
+							<div class="media-left media-middle">
+								<img class="img-thumbnail img-responsive" height="90" width="90" src="<?php echo $this->get_profile_pic_src($userid); ?>">
+								<div class="small text-center text-muted"><?php echo $user_info_array['user_status']; ?></div>
+							</div>
+						<?php
+						}
+						?>
+
+						<div class="media-body">					
+							<div>
+								<h4><strong><?php echo $user_info_array['username']; ?></strong></h4>
+								<div class="small">Posts: <?php echo $user_info_array['user_posts_count']; ?></div>
+								<div class="small text-muted">Join Date: <?php echo $user_info_array['user_join_date']; ?></div>
+							</div>
+
+							<a target="_blank" href="<?php echo $this->url_base . "search.php?do=finduser&u=" . $userid; ?>" role="button" class="btn btn-success btn-sm"><img height="16" width="16" class="text-left" src="<?php echo plugins_url('images/cgs_old_logo_sm.png', __FILE__);?>"/> View Posts</a>							
+						</div>						
+
 					</div>
 
-					<div class="media-body">					
-						<div>
-							<h4><strong><?php echo $user_info_array['username']; ?></strong></h4>
-							<div class="small">Posts: <?php echo $user_info_array['user_posts_count']; ?></div>
-							<div class="small text-muted">Join Date: <?php echo $user_info_array['user_join_date']; ?></div>
-						</div>
-
-						<a target="_blank" href="<?php echo $this->url_base . "search.php?do=finduser&u=" . $userid; ?>" role="button" class="btn btn-success btn-sm"><img height="16" width="16" class="text-left" src="<?php echo plugins_url('images/cgs_old_logo_sm.png', __FILE__);?>"/> View Posts</a>							
-					</div>						
-
-				</div>
+				<?php 
+				
+				}
+				
+				?>
 
 				<div class="container-fluid">
 					<div class="row">
-						<h5 class="text-uppercase">Recent Answers</h5>
+						<h5 class="text-uppercase"><?php echo $feed_title; ?></h5>
 					</div>
 					<div class="row">
 						
@@ -241,9 +298,8 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 
 }
 
-
+// Register the widget
 add_action('widgets_init', 'register_cgs_widget');
-
 function register_cgs_widget() {
 	register_widget('KhCGSocietyLatestPosts');
 }
