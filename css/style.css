@@ -1,24 +1,29 @@
-.cgs-posts-list p {
+.cgs_bs .cgs-posts-list p {
 	border-bottom: 1px dotted #bdbdbd;
 }
 
-.media h4 {
+.cgs_bs .media h4 {
 	margin-top: 2px;
 	margin-bottom: 2px;
 	color: #777777;
 	font-family: 'Roboto Condensed', sans-serif;
 }
 
-div.media {
+.cgs_bs h5 {
+	font-family: 'Roboto Condensed', sans-serif;
+}
+
+.cgs_bs div.media {
 	margin-bottom: 10px;
 }
 
-a.btn {
+.cgs_bs a.btn {
 	color: #ffffff !important;
 	margin-top: 2px;
 }
 
-a.powered-by {
-	font-size: 75%;
-	margin-top: 5px;
+.cgs_bs a.powered-by {
+	font-size: 65% !important;
+	margin-top: 3px !important;
+	color: #668877 !important;
 }

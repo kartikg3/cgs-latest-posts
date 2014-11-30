@@ -25,7 +25,6 @@ Author URI: http://kartikhariharan.com
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 	02110-1301, USA
 */
-//ini_set('display_errors', 'On');
 
 foreach ( glob( plugin_dir_path( __FILE__ ) . "includes/*.php" ) as $file ) {
     include_once $file;
@@ -38,15 +37,14 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 	protected $min_request_interval;
 	protected $show_powered_by;
 	protected $powered_by_url;
-	protected $cache_expiry_time;
 	private static $instance_count = 0;
+	public static $transient_key_posts_base = 'cgs-trans-posts-cache-';
+	public static $transient_key_userinfo_base = 'cgs-trans-userinfo-cache-';
 
 	function __construct() {
 		$this->powered_by_url = "http://kartikhariharan.com";
 		$this->url_base = "http://forums.cgsociety.org/";
-		$this->min_request_interval = 2;
-		$this->show_powered_by = true;
-		$this->cache_expiry_time = 50;
+		$this->min_request_interval = 4;
 		$params = array(
 				'name' => __('CGSociety Latest Posts'),
 				'description' => __('Widget to list your latest CGSociety posts.')
@@ -56,7 +54,7 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 
 	public function form($instance) {
 		extract($instance);
-		?>
+?>
 		<h4 style="text-decoration: underline;">General Options</h4>
 		<p>
 			<label for="<?php echo $this->get_field_id('title'); ?>">Title: </label>
@@ -101,6 +99,17 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 				/>
 			<label for="<?php echo $this->get_field_id('show_profile_pic'); ?>">Show profile picture</label>
 		</p>
+		<p>			
+			<input
+				id="<?php echo $this->get_field_id('show_powered_by'); ?>"
+				name="<?php echo $this->get_field_name('show_powered_by'); ?>"
+				value="<?php if(isset($show_powered_by)) { echo esc_attr($show_powered_by); } else {echo true;}; ?>"
+				<?php if($show_powered_by == true) echo "checked"; ?>
+				type="checkbox"
+				class="checkbox"
+				/>
+			<label for="<?php echo $this->get_field_id('show_powered_by'); ?>">Show powered by link</label>
+		</p>
 
 		<p>
 			<label for="<?php echo $this->get_field_id('feed_title'); ?>">Feed title: </label>
@@ -122,7 +131,22 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 		</p>	
 
 
-		<?php
+<?php
+	}
+
+	public function update($new_instance, $old_instance) {
+		$instance = $old_instance;
+		$instance['userid'] = strip_tags($new_instance['userid']);
+		$instance['title'] = strip_tags($new_instance['title']);
+		$instance['feed_title'] = strip_tags($new_instance['feed_title']);
+		$instance['maxposts'] = strip_tags($new_instance['maxposts']);
+		$instance['show_profile_card_opt'] = $new_instance['show_profile_card_opt'];
+		$instance['show_profile_pic'] = $new_instance['show_profile_pic'];
+		$instance['show_powered_by'] = $new_instance['show_powered_by'];
+
+		delete_transient(self::$transient_key_posts_base . $instance['userid']);
+		delete_transient(self::$transient_key_userinfo_base . $instance['userid']);
+		return $instance;
 	}
 
 	public function widget($args, $instance) {
@@ -146,24 +170,25 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 				}
 			}
 
-			?>
+?>
 			<div class="cgs_bs">
-				<?php if ($show_profile_card_opt) {
+<?php 
+				if ($show_profile_card_opt) {
 
-					?>
+?>
 
 					<div class="media">
 
-						<?php
+<?php
 						if ($show_profile_pic) {
-						?>
+?>
 							<div class="media-left media-middle">
 								<img class="img-thumbnail img-responsive" height="90" width="90" src="<?php echo $this->get_profile_pic_src($userid); ?>">
 								<div class="small text-center text-muted"><?php echo $user_info_array['user_status']; ?></div>
 							</div>
-						<?php
+<?php
 						}
-						?>
+?>
 
 						<div class="media-body">					
 							<div>
@@ -177,11 +202,11 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 
 					</div>
 
-				<?php 
+<?php 
 				
 				}
 				
-				?>
+?>
 
 				<div class="container-fluid">
 					<div class="row">
@@ -189,43 +214,47 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 					</div>
 					<div class="row">
 						
-						<div class="cgs-posts-list"><?php
+						<div class="cgs-posts-list">
+<?php
 
 						if (empty($maxposts))
 							$maxposts = 10; // Default
 
 						foreach(array_slice($link_array, 0, $maxposts) as $post_link) {
 							extract($post_link);				
-							echo '<p><a href="' . $link . '"">' . $link_text .'</a></p>';
+							echo '<p><a target="_blank" href="' . $link . '"">' . $link_text .'</a></p>';
 						}
 
-						?>
+?>
 						</div>
 					</div>
-					<?php if ($this->show_powered_by) { ?>
+<?php 
+					if ($show_powered_by) { 
+?>
 
 						<div class="row text-left"><a href="<?php echo $this->powered_by_url ;?>" class="powered-by small text-muted">Powered by cgs-latest-posts</a></div>
 
-					<?php } ?>
+<?php 
+					} 
+?>
 				</div>
 			</div>
-			<?php			
+<?php			
 
 		echo $after_widget;
 	}
 
 	function get_latest_posts($userid) {
 
-		$transient_key_base = 'cgs-trans-posts-cache-';
-		$transient_key = $transient_key_base . $userid;
+		$transient_key = self::$transient_key_posts_base . $userid;
 		$link_array = get_transient($transient_key);
 
 		if (false === $link_array) {
 			
-			if ($this->instance_count > 0)
-				sleep($this->min_request_interval * $this->instance_count);
+			if (self::$instance_count > 0)
+				sleep($this->min_request_interval * self::$instance_count);
 
-			$this->instance_count ++;
+			self::$instance_count ++;
 
 			$target_url = "compress.zlib://" . $this->url_base . "search.php?do=finduser&u=" . $userid;
 			$html = file_get_html($target_url);
@@ -243,7 +272,7 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 				$link_array[] = array('link' => $link, 'link_text' => $link_text);			
 			}
 
-			set_transient($transient_key, $link_array, $this->cache_expiry_time);
+			set_transient($transient_key, $link_array, get_cache_timeout());
 		}
 
 		return $link_array;
@@ -256,8 +285,7 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 
 	function get_user_info($userid, $link) {
 
-		$transient_key_base = 'cgs-trans-userinfo-cache-';
-		$transient_key = $transient_key_base . $userid;
+		$transient_key = self::$transient_key_userinfo_base . $userid;
 		$user_info_array = get_transient($transient_key);
 
 		if (false === $user_info_array) {
@@ -287,7 +315,7 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 					$user_posts_count = str_replace(" Posts: ", "", $td_divs[$div_count - 2]->nodes[0]->innertext);
 					$user_info_array = array('username' => $username, 'user_status' => $user_status, 'user_join_date' => $user_join_date, 'user_posts_count' => $user_posts_count);
 					
-					set_transient($transient_key, $user_info_array, $this->cache_expiry_time);
+					set_transient($transient_key, $user_info_array, get_cache_timeout());
 					break;
 				}			
 			}
@@ -296,6 +324,22 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 		return $user_info_array;
 	}
 
+}
+
+function get_cache_timeout() {
+	$cache_timeout_option_key = 'cgs_cache_timeout';
+	$cache_timeout = get_option($cache_timeout_option_key);	
+	if (false === $cache_timeout) {
+		$cache_timeout = 300; // Default cache timeout, in mins.
+		update_option($cache_timeout_option_key, $cache_timeout);
+	}
+	return $cache_timeout * 60; // Return cache timeout in seconds.
+}
+
+// Installation
+register_activation_hook(__FILE__, 'cgs_install');
+function cgs_install() {
+	get_cache_timeout();
 }
 
 // Register the widget
@@ -319,5 +363,156 @@ function add_cgs_style() {
     wp_register_style('cgs-style', plugins_url('css/style.css', __FILE__));
     wp_enqueue_style('cgs-style');
 }
+
+// Add admin option page
+add_action('admin_menu', 'cgs_admin_actions');
+function cgs_admin_actions() {
+	add_options_page('CGS Latest Posts Options', 'CGS Latest Posts Options', 'manage_options', __FILE__, 'cgs_admin_page');
+
+	//call register settings function
+	add_action('admin_init', 'register_cgs_settings');
+}
+
+// Register the settings
+function register_cgs_settings() {
+	register_setting( 'cgs-settings-group', 'cgs_cache_timeout', 'cgs_validate_cache_timeout' );
+}
+
+
+// Validation callback
+function cgs_validate_cache_timeout($input) {
+
+}
+
+// Clear cache
+function clear_cgs_cache() {
+	$all_cgs_widgets = get_option('widget_KhCGSocietyLatestPosts');
+
+	foreach($all_cgs_widgets as $cgs_widget) {
+		if (empty($cgs_widget['userid'])) 
+			continue;
+		
+		$is_posts_cache_cleared = delete_transient(KhCGSocietyLatestPosts::$transient_key_posts_base . $cgs_widget['userid']);
+		$is_userinfo_cache_cleared = delete_transient(KhCGSocietyLatestPosts::$transient_key_userinfo_base . $cgs_widget['userid']);
+		
+		if ($is_posts_cache_cleared) {
+			$success_posts_cache_array[] = $cgs_widget['userid'];
+		} else {
+			$failure_posts_cache_array[] = $cgs_widget['userid'];
+		}
+
+		if ($is_userinfo_cache_cleared) {
+			$success_userinfo_cache_array[] = $cgs_widget['userid'];
+		} else {
+			$failure_userinfo_cache_array[] = $cgs_widget['userid'];
+		}
+	}
+
+	$result['success_posts_cache_array'] = $success_posts_cache_array;
+	$result['failure_posts_cache_array'] = $failure_posts_cache_array;
+	$result['success_userinfo_cache_array'] = $success_userinfo_cache_array;
+	$result['failure_userinfo_cache_array'] = $failure_userinfo_cache_array;
+	
+	return $result;
+}
+
+function display_cgs_clearcache_notice($success_posts_cache_array,
+								       $failure_posts_cache_array,
+								       $success_userinfo_cache_array,
+								       $failure_userinfo_cache_array) {
+
+	if ( isset($success_posts_cache_array) or isset($success_userinfo_cache_array) ) {
+?>
+		<div class="updated">
+<?php
+	
+			foreach($success_posts_cache_array as $success) {
+				echo '<p>Posts cache cleared for userid: '. $success .'.</p>';
+			}
+
+			foreach($success_userinfo_cache_array as $success) {
+				echo '<p>UserInfo cache cleared for userid: '. $success .'.</p>';
+			}			
+?>
+		</div>
+<?php
+	}
+
+	if (isset($failure_posts_cache_array) or isset($failure_userinfo_cache_array)) {
+?>
+		<div class="updated error">
+<?php
+			foreach($failure_posts_cache_array as $fail) {
+				echo '<p>No posts cache for userid: '. $fail .'.</p>';
+			}
+
+			foreach($failure_userinfo_cache_array as $fail) {
+				echo '<p>No UserInfo cache for userid: '. $fail .'.</p>';
+			}	
+?>
+		</div>
+<?php
+	}
+}
+
+// The admin page
+function cgs_admin_page() {
+
+	$cache_timeout = get_cache_timeout();
+
+?>
+<?php
+	
+	if(isset($_POST['clear_cgs_cache'])) {		
+		$result = clear_cgs_cache();
+		extract($result);
+		display_cgs_clearcache_notice($success_posts_cache_array,
+								  $failure_posts_cache_array,
+								  $success_userinfo_cache_array,
+								  $failure_userinfo_cache_array);
+	}
+
+	screen_icon();
+?>
+	<div class="wrap">
+		<div class="icon32" id="icon-options-general"></div>
+		<h2>CGSociety Latest Posts Options</h2>
+		<form action="options.php" method="POST">
+<?php
+			settings_fields('cgs-settings-group');
+			do_settings_sections('cgs-settings-group');
+?>
+			<table class="form-table">
+				<tr>
+					<th scope="row">
+						<label for="cgs_cache_timeout">Cache Timeout (in minutes): </label>
+					</th>
+					<td>
+						<input
+							id="cgs_cache_timeout"
+							name="cgs_cache_timeout"
+							value="<?php echo esc_attr( get_option('cgs_cache_timeout') ); ?>"
+							placeholder="Example: 300"
+							size="25" />
+					</td>
+				</tr>
+				
+			</table>
+
+			<p>
+				<input type="submit" name="save_cgs_options" value="Save Changes" class="button button-primary" />&nbsp;&nbsp;				
+			</p>
+		</form>		
+
+		<form action="" method="post">
+			<input type="hidden" name="action" value="clear_cgs_cache" />
+			<input type="submit" name="clear_cgs_cache" value="Clear Cache Now" class="button button-secondary" />
+		</form>
+	</div>
+<?php
+
+}
+
+
 
 ?>
