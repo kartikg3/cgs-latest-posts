@@ -238,7 +238,7 @@ class KhCGSocietyLatestPosts extends WP_Widget {
 						if($show_powered_by)
 ?>
 
-							<div class="row text-left"><a href="<?php echo $this->powered_by_url ;?>" class="powered-by small text-muted">Powered by cgs-latest-posts</a></div>
+							<div class="row text-left"><a target="_blank" href="<?php echo $this->powered_by_url ;?>" class="powered-by small text-muted">Powered by cgs-latest-posts</a></div>
 
 <?php 
 					} 
