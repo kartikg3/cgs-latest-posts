@@ -44,11 +44,11 @@ You can set the cache timeout in Settings -> CGS Latest Posts Options page.
 
 ##Screenshots
 
-1. The CGSociety Latest Posts widget
-2. Widget configuration
-3. Widget options page
-4. Widget clear cache in action
-5. The widget in action
+![Alt text](https://raw.githubusercontent.com/kartikg3/cgs-latest-posts/master/screenshot-1.png "The CGSociety Latest Posts widget")
+![Alt text](https://raw.githubusercontent.com/kartikg3/cgs-latest-posts/master/screenshot-2.png "Widget configuration")
+![Alt text](https://raw.githubusercontent.com/kartikg3/cgs-latest-posts/master/screenshot-3.png "Widget options page")
+![Alt text](https://raw.githubusercontent.com/kartikg3/cgs-latest-posts/master/screenshot-4.png "Widget clear cache in action")
+![Alt text](https://raw.githubusercontent.com/kartikg3/cgs-latest-posts/master/screenshot-4.png "The widget in action")
 
 ##Changelog
 
