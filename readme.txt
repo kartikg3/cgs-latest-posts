@@ -3,7 +3,7 @@ Contributors: kartikg3
 Tags: cgsociety, forum, posts, latest, widget
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,5 +52,8 @@ You can set the cache timeout in Settings -> CGS Latest Posts Options page.
 
 == Changelog ==
 
-= 1.0 =
+= 1.0.1 =
+* Update plugin URL
+
+= 1.0.0 =
 * First official release.

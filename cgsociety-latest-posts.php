@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: CGSociety Latest Posts
-Plugin URI: http://kartikhariharan.com
+Plugin URI: https://github.com/kartikg3/cgs-latest-posts
 Description: Widget to list your latest CGSociety posts.
 Version: 1.0.0
 Author: Kartik Hariharan
